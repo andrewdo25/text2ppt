@@ -16,7 +16,7 @@ idna==3.4
 importlib-metadata==6.8.0
 itsdangerous==2.1.2
 Jinja2==3.1.2
-langchain==0.0.232
+langchain==0.3.12
 langsmith==0.0.5
 lxml==4.9.3
 Markdown==3.5.1
