@@ -1,0 +1,22 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+      - "./config.ini:/app/config.ini"
+    restart: always
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"  # Expose Redis on the host machine
+    volumes:
+      - redis_data:/data  # Persist Redis data
+
+volumes:
+  redis_data:
