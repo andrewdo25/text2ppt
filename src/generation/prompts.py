@@ -2,7 +2,7 @@ PREDICT_TITLE = """I hope you help me generate 3 attention-grabbing PPT titles b
 
 PREDICT_TITLE_V2 = """I hope you act as a ```{role}``` and generate {topic_num} attention-grabbing ```{form}``` PPT titles based on the theme ```{title}```. \  
 Here are some requirements for the response:  
-1. [The response should be a list of {topic_num} items separated by "\n" (e.g., Banana\nWeather\nDescription)]  
+1. [The response should be a list of {topic_num} items separated by "\\n" (e.g., Banana\\nWeather\\nDescription)]  
 """
 
 PREDICT_OUTLINE = """The title I have chosen is the ```{query}```th title. I hope you use markdown format to generate an outline with only titles, and please follow these requirements:

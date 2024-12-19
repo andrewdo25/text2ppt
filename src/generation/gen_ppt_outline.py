@@ -1,4 +1,4 @@
-from readconfig.myconfig import MyConfig
+from core.config import settings
 from chain.gpt_memory import GptChain
 from generation.prompts import (
     PREDICT_TITLE,
@@ -11,17 +11,14 @@ from generation.prompts import (
 
 
 class Gen:
-    config: MyConfig = None
     chain: GptChain = None
 
     def __init__(self, session_id):
-        self.config = MyConfig()
-        # print(f"open ai key:{self.config.OPENAI_API_KEY}")
         self.chain = GptChain(
-            openai_api_key=self.config.OPENAI_API_KEY,
+            openai_api_key=settings.OPENAI_API_KEY,
             session_id=session_id,
-            redis_url=self.config.REDIS_URL,
-            openai_base_url=self.config.OPENAI_BASE_URL,
+            redis_url=settings.REDIS_URL,
+            openai_base_url=settings.OPENAI_BASE_URL,
         )
 
 

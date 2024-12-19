@@ -12,6 +12,7 @@ from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
 from pptx.text.text import Font
 
+from core.config import settings
 from mdtree.parser import parse_string, Out, Heading
 from mdtree.utils import get_random_theme, get_random_file
 
@@ -23,17 +24,16 @@ class Tree2PPT:
     tree: Heading = None
     theme: str = None
 
-    def __init__(self, md_str1):
+    def __init__(self, markdown_str):
         self.init_pptx()
-        self.init_markdown(md_str1)
+        self.init_markdown(markdown_str)
         self.traverse_tree(self.tree)
 
         now = datetime.datetime.now().timestamp()
-        path = "myppt/ppt" + str(now) + ".pptx"
-        if not os.path.exists("myppt"):
-            os.makedirs("myppt")
-        self.current_path = path
-        self.prs.save(path)
+        file_name = "ppt_" + str(now).replace(".", "") + ".pptx"
+        file_path = os.path.join(settings.PPT_PATH, file_name)
+        self.current_path = file_path
+        self.prs.save(file_path)
 
     def init_pptx(self):
         prs = Presentation()
@@ -61,7 +61,7 @@ class Tree2PPT:
         if heading.children != []:
             for child in heading.children:
                 self.traverse_tree(child)
-    
+
     def get_file_path(self):
         return self.current_path
 
@@ -121,7 +121,7 @@ class Tree2PPT:
                 if shape.has_text_frame:
                     shape_props = self.extract_shape_properties(shape)
                     for run in shape_props.get("runs", []):
-                        color_hex = run['color'] if run["color"] else "default"
+                        color_hex = run["color"] if run["color"] else "default"
                         md_content.append(
                             f"- **Text**: {run['text']} | "
                             f"**Font**: {run['font']} | **Size**: {run['size']}pt | "
@@ -147,8 +147,6 @@ class Tree2PPT:
 class MarkdownCategory:
     TITLE = "#"
     CONTENT = "<p>"
-
-    pass
 
 
 class MD2Slide:
@@ -210,7 +208,7 @@ class MD2Slide:
     def init_title(self):
         # Get slide width
         slide_width = self.presentation.slide_width
-        
+
         # Calculate 80% of the slide width
         title_width = slide_width * 0.9
         shapes = self.slide.shapes

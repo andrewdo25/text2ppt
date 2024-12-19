@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from core.config import settings
 from generation.gen_ppt_outline import GenBody, GenTitle, GenOutline
 from mdtree.tree2ppt import Tree2PPT
 from schemas.request_schema import (
@@ -15,18 +16,17 @@ from schemas.request_schema import (
     PPTRequest,
 )
 
-HOST_URL = "https://46aa-113-190-253-97.ngrok-free.app"
-
 # Initialize FastAPI application
 app = FastAPI(
-    title="Text2PPT API",
-    description="API for generating PPTs from text",
+    title=settings.PROJECT_NAME,
+    description=settings.PROJECT_DESCRIPTION,
+    version=settings.VERSION,
     openapi_url="/openapi.json",
     docs_url="/docs",
     redoc_url="/re-doc",
     servers=[
         {
-            "url": HOST_URL,
+            "url": settings.HOST_URL,
             "description": "Development server",
         }
     ],
@@ -34,7 +34,7 @@ app = FastAPI(
 
 # Setup logging
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.DEBUG if settings.DEBUG else logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
 
@@ -56,7 +56,7 @@ app.mount("/static/css", StaticFiles(directory="templates/static/css"), name="cs
 app.mount(
     "/static/media", StaticFiles(directory="templates/static/media"), name="media"
 )
-app.mount("/static/ppt", StaticFiles(directory="myppt"), name="ppt")
+app.mount("/static/ppt", StaticFiles(directory=settings.PPT_DIR), name="ppt")
 
 
 @app.get("/")
@@ -72,8 +72,6 @@ async def get_uuid():
 
 @app.post("/generate_title")
 async def generate_title(request: TitleRequest):
-    ip_address = "Unknown IP"  # Can be extracted from `request.client.host` if required
-    logging.info(f"ip地址为 {ip_address}\t uuid 为 {request.uuid}\t生成了标题")
     gen_title_v2 = GenTitle(request.uuid)
     content = gen_title_v2.predict_title_v2(
         request.form, request.role, request.title, request.topic_num
@@ -83,8 +81,6 @@ async def generate_title(request: TitleRequest):
 
 @app.post("/generate_outline")
 async def generate_outline(request: OutlineRequest):
-    ip_address = "Unknown IP"
-    logging.info(f"ip地址为 {ip_address}\t uuid 为 {request.uuid}\t生成了大纲")
     gen_outline_v2 = GenOutline(request.uuid)
     content = gen_outline_v2.predict_outline_v2(request.title, request.requirement)
     # content = content.replace("```", "")
@@ -93,8 +89,6 @@ async def generate_outline(request: OutlineRequest):
 
 @app.post("/generate_body")
 async def generate_body(request: BodyRequest):
-    ip_address = "Unknown IP"
-    logging.info(f"ip地址为 {ip_address}\t uuid 为 {request.uuid}\t生成了全文")
     gen_body1 = GenBody(request.uuid)
     content = gen_body1.predict_body(request.outline, request.requirement)
     # content = content.replace("```", "")
@@ -107,13 +101,11 @@ async def generate_ppt(request: PPTRequest):
     if not markdown_data:
         raise HTTPException(status_code=400, detail="No data provided")
     markdown_str = markdown_data.replace("\r", "\n")
-    ip_address = "Unknown IP"
-    logging.info(f"ip地址为 {ip_address}\t uuid md转换生成了ppt")
 
     ppt = Tree2PPT(markdown_str)
     path = ppt.get_file_path()
     filename = path.split("/")[-1]
-    url_download = f"{HOST_URL}/static/ppt/{filename}"
+    url_download = f"{settings.HOST_URL}/static/ppt/{filename}"
     return StreamingResponse(
         url_download,
         media_type="application/octet-stream",
@@ -152,18 +144,18 @@ async def generate_ppt_json(request: PPTRequest):
 
 
 @app.get("/ppt")
-async def generate_ppt_static(title1: str):
+async def generate_ppt_static(topic: str):
     session_id = str(uuid.uuid4())
     title = GenTitle(session_id)
-    title.predict_title(title1)
+    title.predict_title(topic)
 
     outline = GenOutline(session_id)
     outline.predict_outline("1")
 
     body = GenBody(session_id)
-    md = body.predict_body("")
+    markdown_str = body.predict_body("")
 
-    ppt = Tree2PPT(md)
+    ppt = Tree2PPT(markdown_str)
     stream = ppt.save_stream()
     return StreamingResponse(
         stream,
